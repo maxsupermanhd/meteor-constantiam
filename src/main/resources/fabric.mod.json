@@ -1,27 +1,28 @@
 {
   "schemaVersion": 1,
-  "id": "addon-template",
+  "id": "meteorconstantiam",
   "version": "${version}",
-  "name": "Addon Template",
-  "description": "An addon template for the Meteor addons.",
+  "name": "Addon for Constantiam",
+  "description": "Ripped stuff from mankool0 basically...",
   "authors": [
-    "seasnail"
+    "FlexCoral",
+    "mankool0"
   ],
   "contact": {
-    "repo": "https://github.com/MeteorDevelopment/meteor-addon-template"
+    "repo": "https://github.com/maxsupermanhd/meteor-constantiam"
   },
   "icon": "assets/template/icon.png",
   "environment": "client",
   "entrypoints": {
     "meteor": [
-      "com.example.addon.Addon"
+      "meteordevelopment.addon.meteorconstantiam.MeteorConstantiam"
     ]
   },
   "mixins": [
     "addon.mixins.json"
   ],
   "custom": {
-    "meteor-client:color": "225,25,25"
+    "meteor-client:color": "0,255,0"
   },
   "depends": {
     "java": ">=17",
