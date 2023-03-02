@@ -3,7 +3,7 @@
  * Copyright (c) Meteor Development.
  */
 
-package meteordevelopment.addon.meteorconstantiam.modules;
+package maxsuperman.addon.meteorconstantiam.modules;
 
 import meteordevelopment.meteorclient.events.entity.player.InteractItemEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;

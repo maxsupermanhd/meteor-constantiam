@@ -15,7 +15,7 @@
   "environment": "client",
   "entrypoints": {
     "meteor": [
-      "meteordevelopment.addon.meteorconstantiam.MeteorConstantiam"
+      "maxsuperman.addon.meteorconstantiam.MeteorConstantiam"
     ]
   },
   "mixins": [
