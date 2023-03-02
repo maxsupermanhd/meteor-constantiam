@@ -19,7 +19,6 @@
     ]
   },
   "mixins": [
-    "addon.mixins.json"
   ],
   "custom": {
     "meteor-client:color": "0,255,0"
