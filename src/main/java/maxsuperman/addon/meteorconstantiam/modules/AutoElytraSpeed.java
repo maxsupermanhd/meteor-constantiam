@@ -11,7 +11,6 @@ import meteordevelopment.meteorclient.systems.modules.movement.elytrafly.ElytraF
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.math.ChunkPos;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -34,6 +33,18 @@ public class AutoElytraSpeed extends Module {
         .build()
     );
 
+    public enum restrictionDetectMode {
+        HotbarMessage,
+        Sound
+    }
+
+    public final Setting<AutoElytraSpeed.restrictionDetectMode> detectionMode = sgGeneral.add(new EnumSetting.Builder<AutoElytraSpeed.restrictionDetectMode>()
+        .name("detection-mode")
+        .description("Depending on what to trigger restricted mode")
+        .defaultValue(AutoElytraSpeed.restrictionDetectMode.HotbarMessage)
+        .build()
+    );
+
     private final Setting<String> matchingMessage = sgGeneral.add(new StringSetting.Builder()
         .name("message-filter")
         .description("Regex for filtering speed limiter message")
@@ -49,29 +60,23 @@ public class AutoElytraSpeed extends Module {
         .build()
     );
 
-    public enum RecoverTrigger {
-        TimerRecovery,
-        ChunkBorderRecovery
-    };
-
-    public final Setting<RecoverTrigger> recoveryMode = sgGeneral.add(new EnumSetting.Builder<RecoverTrigger>()
-        .name("recovery-mode")
-        .description("When to relax restriction")
-        .defaultValue(RecoverTrigger.TimerRecovery)
-        .build()
-    );
-
     private final Setting<Integer> timeoutTicks = sgGeneral.add(new IntSetting.Builder()
         .name("timeout-ticks")
         .description("For how long to restrict speed")
         .defaultValue(20)
-        .visible(() -> recoveryMode.get() == RecoverTrigger.TimerRecovery)
         .build()
     );
 
     private final Setting<Boolean> suppressSound = sgGeneral.add(new BoolSetting.Builder()
         .name("suppress-sound")
         .description("Shuts annoying ding")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Boolean> soundTriggerOnlyInFlight = sgGeneral.add(new BoolSetting.Builder()
+        .name("sounddetect-only-in-flight")
+        .description("Triggers restriction only if sound occured while flying")
         .defaultValue(false)
         .build()
     );
@@ -108,8 +113,6 @@ public class AutoElytraSpeed extends Module {
     private int timeoutLeft = 0;
     private int soundBlock = 0;
 
-    private ChunkPos triggeredChunk = null;
-
     private void changeSpeed(double s) {
         Modules.get().get(ElytraFly.class).horizontalSpeed.set(s);
     }
@@ -119,16 +122,9 @@ public class AutoElytraSpeed extends Module {
         if (soundBlock > 0) {
             soundBlock--;
         }
-        if (recoveryMode.get() == RecoverTrigger.TimerRecovery) {
-            if (timeoutLeft > 0) {
-                timeoutLeft--;
-                if (timeoutLeft == 0) {
-                    changeSpeed(defaultSpeed.get());
-                }
-            }
-        } else if (recoveryMode.get() == RecoverTrigger.ChunkBorderRecovery){
-            assert mc.player != null;
-            if (mc.player.getChunkPos() != triggeredChunk) {
+        if (timeoutLeft > 0) {
+            timeoutLeft--;
+            if (timeoutLeft == 0) {
                 changeSpeed(defaultSpeed.get());
             }
         }
@@ -136,19 +132,15 @@ public class AutoElytraSpeed extends Module {
 
     @EventHandler
     private void onPacket(PacketEvent.Receive event) {
-        if (event.packet instanceof OverlayMessageS2CPacket &&
-            triggerPattern != null && triggerPattern.matcher(((OverlayMessageS2CPacket) event.packet).getMessage().getString()).find()) {
-            if (recoveryMode.get() == RecoverTrigger.TimerRecovery) {
-                if (timeoutLeft > 0) {
-                    info(String.format("Got speed limited while already with restricted speed (%d)", timeoutLeft));
-                    toggle();
-                } else {
-                    timeoutLeft = timeoutTicks.get();
-                    changeSpeed(restrictedSpeed.get());
-                    soundBlock = soundDelay.get();
-                }
-            } else if (recoveryMode.get() == RecoverTrigger.ChunkBorderRecovery) {
-                triggeredChunk = mc.player.getChunkPos();
+        if (    detectionMode.get() == restrictionDetectMode.HotbarMessage &&
+                event.packet instanceof OverlayMessageS2CPacket &&
+                triggerPattern != null &&
+                triggerPattern.matcher(((OverlayMessageS2CPacket) event.packet).getMessage().getString()).find()) {
+            if (timeoutLeft > 0) {
+                info(String.format("Got speed limited while already with restricted speed (%d)", timeoutLeft));
+                toggle();
+            } else {
+                timeoutLeft = timeoutTicks.get();
                 changeSpeed(restrictedSpeed.get());
                 soundBlock = soundDelay.get();
             }
@@ -160,13 +152,34 @@ public class AutoElytraSpeed extends Module {
 
     @EventHandler
     private void onPlaySound(PlaySoundEvent event) {
-        if (soundBlock == 0) {
+        if (mc.player == null) {
             return;
         }
-        for (SoundEvent sound : soundsToSuppress.get()) {
-            if (sound.getId().equals(event.sound.getId())) {
-                event.cancel();
-                break;
+        if (detectionMode.get() == restrictionDetectMode.Sound) {
+            if (soundTriggerOnlyInFlight.get()) {
+                if (!mc.player.isFallFlying()) {
+                    return;
+                }
+            }
+            for (SoundEvent sound : soundsToSuppress.get()) {
+                if (sound.getId().equals(event.sound.getId())) {
+                    timeoutLeft = timeoutTicks.get();
+                    changeSpeed(restrictedSpeed.get());
+                    if (suppressSound.get()) {
+                        event.cancel();
+                    }
+                    break;
+                }
+            }
+        } else {
+            if (soundBlock == 0) {
+                return;
+            }
+            for (SoundEvent sound : soundsToSuppress.get()) {
+                if (sound.getId().equals(event.sound.getId())) {
+                    event.cancel();
+                    break;
+                }
             }
         }
     }

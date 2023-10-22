@@ -1,8 +1,6 @@
 package maxsuperman.addon.meteorconstantiam;
 
 import maxsuperman.addon.meteorconstantiam.modules.AutoElytraSpeed;
-import maxsuperman.addon.meteorconstantiam.modules.ConstElytraBoost;
-import com.mojang.logging.LogUtils;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.systems.modules.Modules;
@@ -15,7 +13,6 @@ public class MeteorConstantiam extends MeteorAddon {
     @Override
     public void onInitialize() {
         MeteorClient.EVENT_BUS.registerLambdaFactory("maxsuperman.addon.meteorconstantiam", (lookupInMethod, klass) -> (MethodHandles.Lookup) lookupInMethod.invoke(null, klass, MethodHandles.lookup()));
-        Modules.get().add(new ConstElytraBoost());
         Modules.get().add(new AutoElytraSpeed());
     }
 
