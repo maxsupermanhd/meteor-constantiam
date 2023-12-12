@@ -2,11 +2,10 @@
   "schemaVersion": 1,
   "id": "meteorconstantiam",
   "version": "${version}",
-  "name": "Addon for Constantiam",
-  "description": "Ripped stuff from mankool0 basically...",
+  "name": "Meteor Constantiam",
+  "description": "Addon with Constantiam specific modules",
   "authors": [
-    "FlexCoral",
-    "mankool0"
+    "FlexCoral"
   ],
   "contact": {
     "repo": "https://github.com/maxsupermanhd/meteor-constantiam"

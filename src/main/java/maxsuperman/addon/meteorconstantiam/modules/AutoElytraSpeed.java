@@ -18,6 +18,7 @@ import java.util.regex.PatternSyntaxException;
 
 public class AutoElytraSpeed extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
+    private final SettingGroup sgDetection = settings.createGroup("detection");
 
     private final Setting<Double> defaultSpeed = sgGeneral.add(new DoubleSetting.Builder()
         .name("default-speed")
@@ -33,33 +34,6 @@ public class AutoElytraSpeed extends Module {
         .build()
     );
 
-    public enum restrictionDetectMode {
-        HotbarMessage,
-        Sound
-    }
-
-    public final Setting<AutoElytraSpeed.restrictionDetectMode> detectionMode = sgGeneral.add(new EnumSetting.Builder<AutoElytraSpeed.restrictionDetectMode>()
-        .name("detection-mode")
-        .description("Depending on what to trigger restricted mode")
-        .defaultValue(AutoElytraSpeed.restrictionDetectMode.HotbarMessage)
-        .build()
-    );
-
-    private final Setting<String> matchingMessage = sgGeneral.add(new StringSetting.Builder()
-        .name("message-filter")
-        .description("Regex for filtering speed limiter message")
-        .defaultValue("restricted")
-        .onChanged((String v) -> compileRegex())
-        .build()
-    );
-
-    private final Setting<Boolean> suppressMessage = sgGeneral.add(new BoolSetting.Builder()
-        .name("suppress-message")
-        .description("Cancels OverlayMessageS2CPacket if matched with filter")
-        .defaultValue(false)
-        .build()
-    );
-
     private final Setting<Integer> timeoutTicks = sgGeneral.add(new IntSetting.Builder()
         .name("timeout-ticks")
         .description("For how long to restrict speed")
@@ -67,32 +41,63 @@ public class AutoElytraSpeed extends Module {
         .build()
     );
 
-    private final Setting<Boolean> suppressSound = sgGeneral.add(new BoolSetting.Builder()
+    public enum restrictionDetectMode {
+        HotbarMessage,
+        Sound
+    }
+
+    private final Setting<Boolean> onlyInFlight = sgDetection.add(new BoolSetting.Builder()
+        .name("only-in-flight")
+        .description("Triggers restriction only while flying")
+        .defaultValue(false)
+        .build()
+    );
+
+    public final Setting<AutoElytraSpeed.restrictionDetectMode> detectionMode = sgDetection.add(new EnumSetting.Builder<AutoElytraSpeed.restrictionDetectMode>()
+        .name("detection-mode")
+        .description("Depending on what to trigger restricted mode")
+        .defaultValue(AutoElytraSpeed.restrictionDetectMode.HotbarMessage)
+        .build()
+    );
+
+    private final Setting<String> matchingMessage = sgDetection.add(new StringSetting.Builder()
+        .name("message-filter")
+        .description("Regex for filtering speed limiter message")
+        .defaultValue("restricted")
+        .onChanged((String v) -> compileRegex())
+        .visible(() -> detectionMode.get() == restrictionDetectMode.HotbarMessage)
+        .build()
+    );
+
+    private final Setting<Boolean> suppressMessage = sgDetection.add(new BoolSetting.Builder()
+        .name("suppress-message")
+        .description("Cancels OverlayMessageS2CPacket if matched with filter")
+        .defaultValue(false)
+        .visible(() -> detectionMode.get() == restrictionDetectMode.HotbarMessage)
+        .build()
+    );
+
+    private final Setting<List<SoundEvent>> matchingSounds = sgDetection.add(new SoundEventListSetting.Builder()
+        .name("sounds-filter")
+        .description("Sounds to detect.")
+        .visible(() -> detectionMode.get() == restrictionDetectMode.Sound)
+        .build()
+    );
+
+    private final Setting<Boolean> suppressSound = sgDetection.add(new BoolSetting.Builder()
         .name("suppress-sound")
-        .description("Shuts annoying ding")
+        .description("Cancels matching sounds")
         .defaultValue(false)
+        .visible(() -> detectionMode.get() == restrictionDetectMode.Sound)
         .build()
     );
 
-    private final Setting<Boolean> soundTriggerOnlyInFlight = sgGeneral.add(new BoolSetting.Builder()
-        .name("sounddetect-only-in-flight")
-        .description("Triggers restriction only if sound occured while flying")
-        .defaultValue(false)
-        .build()
-    );
-
-    private final Setting<List<SoundEvent>> soundsToSuppress = sgGeneral.add(new SoundEventListSetting.Builder()
-        .name("suppressed-sounds")
-        .description("Sounds to block.")
-        .visible(suppressSound::get)
-        .build()
-    );
-
-    private final Setting<Integer> soundDelay = sgGeneral.add(new IntSetting.Builder()
+    private final Setting<Integer> soundDelay = sgDetection.add(new IntSetting.Builder()
         .name("suppress-time")
         .description("For how long to ignore sounds")
         .defaultValue(20)
         .visible(suppressSound::get)
+        .visible(() -> detectionMode.get() == restrictionDetectMode.Sound)
         .build()
     );
 
@@ -156,12 +161,12 @@ public class AutoElytraSpeed extends Module {
             return;
         }
         if (detectionMode.get() == restrictionDetectMode.Sound) {
-            if (soundTriggerOnlyInFlight.get()) {
+            if (onlyInFlight.get()) {
                 if (!mc.player.isFallFlying()) {
                     return;
                 }
             }
-            for (SoundEvent sound : soundsToSuppress.get()) {
+            for (SoundEvent sound : matchingSounds.get()) {
                 if (sound.getId().equals(event.sound.getId())) {
                     timeoutLeft = timeoutTicks.get();
                     changeSpeed(restrictedSpeed.get());
@@ -175,7 +180,7 @@ public class AutoElytraSpeed extends Module {
             if (soundBlock == 0) {
                 return;
             }
-            for (SoundEvent sound : soundsToSuppress.get()) {
+            for (SoundEvent sound : matchingSounds.get()) {
                 if (sound.getId().equals(event.sound.getId())) {
                     event.cancel();
                     break;
