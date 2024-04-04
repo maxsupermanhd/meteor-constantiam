@@ -12,7 +12,6 @@ import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.*;
 import net.minecraft.block.piston.PistonBehavior;
-import net.minecraft.block.sapling.*;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.registry.tag.BlockTags;
