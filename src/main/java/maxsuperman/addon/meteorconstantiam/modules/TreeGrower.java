@@ -58,6 +58,15 @@ public class TreeGrower extends Module {
         .build()
     );
 
+    private final Setting<List<Block>> growBlocks = sgGeneral.add(new BlockListSetting.Builder()
+        .name("grow-blocks")
+        .description("On what blocks to allow growing")
+        .defaultValue(Blocks.AZALEA,
+            Blocks.DIRT,
+            Blocks.ROOTED_DIRT)
+        .build()
+    );
+
     public TreeGrower() {
         super(Categories.World, "tree-grower", "Grows trees");
     }
@@ -91,7 +100,7 @@ public class TreeGrower extends Module {
         var saplingBlock = mc.world.getBlockState(saplingPos);
         if(saplingBlock.isAir()) {
             var plantBlock = mc.world.getBlockState(plantPos.get());
-            if(!plantBlock.isIn(BlockTags.DIRT)) {
+            if(!growBlocks.get().contains(plantBlock.getBlock())) {
                 error("Can not plant on %s", Names.get(plantBlock.getBlock()));
                 toggle();
                 return;
