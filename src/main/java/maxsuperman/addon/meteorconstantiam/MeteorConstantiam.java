@@ -3,6 +3,7 @@ package maxsuperman.addon.meteorconstantiam;
 import maxsuperman.addon.meteorconstantiam.modules.AutoElytraSpeed;
 import maxsuperman.addon.meteorconstantiam.modules.TreeGrower;
 import meteordevelopment.meteorclient.MeteorClient;
+import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 
@@ -26,5 +27,10 @@ public class MeteorConstantiam extends MeteorAddon {
     @Override
     public String getPackage() {
         return "maxsuperman.addon.meteorconstantiam";
+    }
+
+    @Override
+    public GithubRepo getRepo() {
+        return new GithubRepo("maxsupermanhd", "meteor-villager-roller");
     }
 }
