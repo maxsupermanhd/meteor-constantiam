@@ -119,7 +119,7 @@ public class TreeGrower extends Module {
                 infoString = "Placing sapling";
                 mc.player.networkHandler.sendPacket(new PlayerInteractBlockC2SPacket(Hand.MAIN_HAND, new BlockHitResult(Utils.vec3d(plantPos.get()), Direction.UP, plantPos.get(), false), 0));
             });
-        } else if(saplingBlock.isIn(BlockTags.SAPLINGS)) {
+        } else if(saplings.get().contains(saplingBlock.getBlock())) {
             FindItemResult bonemeal = findBonemeal();
             if (!bonemeal.found()) {
                 error("No bonemeal in hotbar");
